@@ -129,6 +129,17 @@ async def main() -> None:
             exclude_langs=excluded_langs,
             ignore_forked_repos=ignore_forked_repos,
         )
+        # Fail loudly rather than silently committing a badge full of zeroes.
+        # The API reports an empty repository list when the token cannot see the
+        # user's repositories (e.g. an expired token, or a fine-grained token
+        # without the repositories selected), and every statistic below is
+        # derived from that list.
+        if not await s.repos:
+            raise RuntimeError(
+                f"No repositories were returned for {user!r}. Refusing to write "
+                "empty statistics. Check that ACCESS_TOKEN is a classic "
+                "personal access token with the 'repo' and 'read:user' scopes."
+            )
         await asyncio.gather(generate_languages(s), generate_overview(s))
 
 
